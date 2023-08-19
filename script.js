@@ -39,11 +39,13 @@ function showCards(m) {
     return `<div class="col my-3">
                 <div class="card h-100">
                     <img src="${m.Poster}" class="card-img-top">
-                    <div class="card-body">
+                    <div class="card-body d-flex flex-column justify-content-around">
                         <h5 class="card-title">${m.Title}</h5>
                         <h6 class="card-subtitle mb-2 text-muted">${m.Year}</h6>
-                        <a href="#" class="btn btn-primary modal-detail-button" data-toggle="modal" 
-                        data-target="#movieDetailModal" data-imdbid="${m.imdbID}">Show Details</a>
+                        <div class="custom-flex">
+                            <a href="#" class="btn btn-primary modal-detail-button" data-toggle="modal" 
+                            data-target="#movieDetailModal" data-imdbid="${m.imdbID}">Show Details</a>
+                        </div>
                     </div>
                 </div>
             </div>`;
