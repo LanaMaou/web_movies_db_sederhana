@@ -1,74 +1,88 @@
 /* eslint-disable no-undef */
-// $('.search-button').click(function () {
-//     $.ajax({
-//         url: 'http://www.omdbapi.com/?apikey=e502dbda&s=' + $('.input-keyword').val(),
-//         success: results => {
-//             const movies = results.Search;
-//             let cards = '';
-//             movies.forEach(m => {
-//                 cards += showCards(m);
-//             });
-//             $('.movie-container').html(cards);
-
-
-//             // ketika tombol detail di-klik
-//             $('.modal-detail-button').on('click', function () {
-//                 $.ajax({
-//                     url: 'http://www.omdbapi.com/?apikey=e502dbda&i=' + $(this).data('imdbid'),
-//                     success: m => {
-//                         const movieDetail = showMovieDetails(m);
-//                         $('.modal-body').html(movieDetail);
-//                     },
-//                     error: (e) => {
-//                         console.log(e.responseText);
-//                     }
-//                 })
-//             })
-//         },
-//         error: (e) => {
-//             console.log(e.responseText);
-//         }
-//     });
-
-// });
-
-
 // ? Fetch
-const searchBtn = document.querySelector('.search-button');
-searchBtn.addEventListener('click', function () {
-    const inputKey = document.querySelector('.input-keyword');
-    fetch('http://www.omdbapi.com/?apikey=e502dbda&s=' + inputKey.value)
-        .then(response => response.json())
-        .then(response => {
-            const movies = response.Search;
-            let cards = '';
-            movies.forEach(m => cards += showCards(m));
-            const movieContainer = document.querySelector('.movie-container');
-            movieContainer.innerHTML = cards;
 
+// * Refactoring
 
-
-            // Ketika button detail di klik
-            const modalDetailButton = document.querySelectorAll('.modal-detail-button');
-            modalDetailButton.forEach(btn => {
-                btn.addEventListener('click', function () {
-                    const imdbid = this.dataset.imdbid;
-                    fetch('http://www.omdbapi.com/?apikey=e502dbda&i=' + imdbid)
-                        .then(response => response.json())
-                        .then(m => {
-                            const movieDetail = showMovieDetails(m)
-                            const modalBody = document.querySelector('.modal-body');
-                            modalBody.innerHTML = movieDetail;
-                        });
-
-                })
-            })
-
-        });
-
+// !Ketika tombol search di klik
+const searchButton = document.querySelector(".search-button");
+// beritahu kepada javascript bahwa didalam function ini ada asynchronous menggunakan syntak "async"
+searchButton.addEventListener("click", async function () {
+    try {
+        const inputKey = document.querySelector(".input-keyword");
+        // "await" digunakan untuk memberitahu javascript bahwa ini adalah asynchronous jadi tunggu dulu atau buat dia seolah-olah synchronous, ini digunakan agar javascript menunggu function getMovies selesai dlu baru jalankan function updateUI 
+        const movies = await getMovies(inputKey.value);
+        updateUI(movies);
+    } catch (err) {
+        updateError(err);
+    }
 });
 
+function getMovies(keyword) {
+    return fetch("http://www.omdbapi.com/?apikey=e502dbda&s=" + keyword)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error("UnAuthorized");
+            }
+            return response.json();
+        })
+        .then(response => {
+            if (response.Response === "False") {
+                throw new Error(response.Error);
+            }
+            return response.Search;
+        });
+}
 
+function updateUI(movies) {
+    let cards = "";
+    movies.forEach((m) => (cards += showCards(m)));
+    const movieContainer = document.querySelector(".movie-container");
+    movieContainer.innerHTML = cards;
+}
+
+function updateError(e) {
+    const alertError = document.querySelector(".alert-error");
+    const movieError = showError(e);
+    alertError.innerHTML = movieError;
+}
+
+
+
+// !ketika tombol detail diklik
+// ?Event binding
+document.addEventListener("click", async function (e) {
+    if (e.target.classList.contains("modal-detail-button")) {
+        try {
+            const imdbid = e.target.dataset.imdbid;
+            const movieDetail = await getMovieDetail(imdbid);
+            updateUIDetail(movieDetail);
+        } catch (err) {
+            updateError(err);
+        }
+    }
+});
+
+function getMovieDetail(imdbid) {
+    return fetch("http://www.omdbapi.com/?apikey=e502dbda&i=" + imdbid)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error("UnAuthorized");
+            }
+            return response.json();
+        })
+        .then(m => {
+            if (m.Response === "False") {
+                throw new Error(m.Error);
+            }
+            return m;
+        });
+}
+
+function updateUIDetail(m) {
+    const movieDetail = showMovieDetails(m);
+    const modalBody = document.querySelector(".modal-body");
+    modalBody.innerHTML = movieDetail;
+}
 
 
 function showCards(m) {
@@ -106,4 +120,14 @@ function showMovieDetails(m) {
                     </div>
                 </div>
             </div>`;
+}
+
+function showError(e) {
+    return `<div class="row">
+                <div class="col-8 m-auto">
+                    <div class="alert alert-danger" role="alert">
+                        <h6>${e}</h6>
+                    </div>
+                </div>
+        </div>`
 }
